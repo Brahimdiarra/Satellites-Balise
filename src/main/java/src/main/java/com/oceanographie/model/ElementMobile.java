@@ -13,7 +13,7 @@ public abstract class ElementMobile {
         this.actif = false;
     }
 
-    public abstract void deplacer(); // À implémenter dans les sous-classes
+    public abstract void deplacer();
 
     public void start() {
         this.actif = true;

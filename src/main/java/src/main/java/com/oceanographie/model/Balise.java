@@ -1,13 +1,38 @@
 package src.main.java.com.oceanographie.model;
 
 
+import src.main.java.com.oceanographie.model.deplacement.StrategieDeplacementBalise;
+import src.main.java.com.oceanographie.model.observer.Observable;
+import src.main.java.com.oceanographie.model.observer.Observateur;
 
-public class Balise extends ElementMobile {
+import java.util.ArrayList;
+import java.util.List;
+
+public class Balise extends ElementMobile  implements Observable{
     private double profondeur;
     private EtatBalise etat;
     private long tempsCollecte;
     private long debutCollecte;
     private long dureeCollecte = 30000;
+    private StrategieDeplacementBalise strategieDeplacement;
+    private List<Observateur> observateurs = new ArrayList<>();
+
+    @Override
+    public void ajouterObservateur(Observateur obs) {
+        observateurs.add(obs);
+    }
+
+    @Override
+    public void retirerObservateur(Observateur obs) {
+      observateurs.remove(obs);
+    }
+
+    @Override
+    public void notifierObservateurs() {
+        for(Observateur obs : observateurs){
+            obs.actualiser(this);
+        }
+    }
 
     public enum EtatBalise {
         COLLECTE,
@@ -17,11 +42,12 @@ public class Balise extends ElementMobile {
         TRANSFERT
     }
 
-    public Balise(String id, Position position, double profondeur) {
+    public Balise(String id, Position position, double profondeur , StrategieDeplacementBalise strategieDeplacement) {
         super(id, position, 2.0);
         this.profondeur = profondeur;
         this.etat = EtatBalise.COLLECTE;
         this.debutCollecte = System.currentTimeMillis();
+        this.strategieDeplacement = strategieDeplacement;
     }
 
     @Override
@@ -30,7 +56,9 @@ public class Balise extends ElementMobile {
 
         switch (etat) {
             case COLLECTE:
-                // Appliquer stratégie de déplacement (Phase 2)
+                if (strategieDeplacement != null) {
+                    strategieDeplacement.appliquerDeplacement(this);
+                }
                 verifierTempsCollecte();
                 break;
 
@@ -39,12 +67,11 @@ public class Balise extends ElementMobile {
                 break;
 
             case EN_SURFACE:
-                // Ne bouge pas
+
                 break;
 
             case SYNCHRONISATION:
             case TRANSFERT:
-                // Ne bouge pas pendant le transfert
                 break;
         }
     }
@@ -68,6 +95,7 @@ public class Balise extends ElementMobile {
     public void changerEtat(EtatBalise nouvelEtat) {
         this.etat = nouvelEtat;
         System.out.println("Balise " + id + " : " + etat);
+        notifierObservateurs();
     }
 
     public void recommencerCollecte() {

@@ -1,9 +1,16 @@
 package src.main.java.com.oceanographie.model;
 
-public class Satellite extends ElementMobile {
+import src.main.java.com.oceanographie.model.observer.Observable;
+import src.main.java.com.oceanographie.model.observer.Observateur;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Satellite extends ElementMobile implements Observable {
     private double hauteur; // Altitude au-dessus de la surface
     private boolean disponible;
     private double rayonCouverture; // Zone de détection
+    private List<Observateur> observateurs = new ArrayList<>();
 
     public Satellite(String id, Position position, double hauteur) {
         super(id, position, 5.0); // Vitesse par défaut
@@ -15,8 +22,7 @@ public class Satellite extends ElementMobile {
     @Override
     public void deplacer() {
         if (!actif) return;
-        // Déplacement circulaire autour de la terre (simplification)
-        // Juste bouger en X pour la démo
+
         position.setX(position.getX() + vitesse);
         // Si sort de l'écran, revenir de l'autre côté
         if (position.getX() > 800) {
@@ -55,4 +61,24 @@ public class Satellite extends ElementMobile {
     public void setRayonCouverture(double rayonCouverture) {
         this.rayonCouverture = rayonCouverture;
     }
+
+    @Override
+    public void ajouterObservateur(Observateur obs) {
+        observateurs.add(obs);
+    }
+
+    @Override
+    public void retirerObservateur(Observateur obs) {
+     observateurs.remove(obs);
+    }
+
+    @Override
+    public void notifierObservateurs() {
+        for (Observateur obs : observateurs) {
+            obs.actualiser(this);
+        }
+    }
+
+
+
 }
