@@ -9,14 +9,12 @@ public class DeplacementVerticale implements StrategieDeplacementBalise {
     private double profondeurMin;
     private double profondeurMax;
 
- public DeplacementVerticale( Double vitesse , boolean montant, double profondeurMin, double profondeurMax ) {
-     this.vitesse = vitesse;
-     this.montant = montant;
-     this.profondeurMin = profondeurMin;
-     this.profondeurMax = profondeurMax;
- }
-
-
+    public DeplacementVerticale(double vitesse, double profondeurMin, double profondeurMax) {
+        this.vitesse = vitesse;
+        this.profondeurMin = Math.max(profondeurMin, profondeurMax); // Le moins négatif
+        this.profondeurMax = Math.min(profondeurMin, profondeurMax); // Le plus négatif
+        this.montant = false;
+    }
 
     @Override
     public void appliquerDeplacement(Balise balise) {

@@ -11,22 +11,41 @@ public class Satellite extends ElementMobile implements Observable {
     private boolean disponible;
     private double rayonCouverture; // Zone de détection
     private List<Observateur> observateurs = new ArrayList<>();
+    private boolean versLaDroite;
 
     public Satellite(String id, Position position, double hauteur) {
         super(id, position, 5.0); // Vitesse par défaut
         this.hauteur = hauteur;
         this.disponible = true;
         this.rayonCouverture = 100.0; // Rayon de couverture
+        this.versLaDroite = true;
     }
 
     @Override
     public void deplacer() {
         if (!actif) return;
 
-        position.setX(position.getX() + vitesse);
-        // Si sort de l'écran, revenir de l'autre côté
-        if (position.getX() > 800) {
-            position.setX(0);
+        // Limites de l'écran pour les satellites
+        final double LIMITE_GAUCHE = 0;
+        final double LIMITE_DROITE = 1000; // Ajuste selon ta largeur d'écran
+
+        // Déplacement horizontal avec rebond
+        if (versLaDroite) {
+            position.setX(position.getX() + vitesse);
+
+            // Si atteint le bord droit, inverser
+            if (position.getX() >= LIMITE_DROITE) {
+                position.setX(LIMITE_DROITE);
+                versLaDroite = false;
+            }
+        } else {
+            position.setX(position.getX() - vitesse);
+
+            // Si atteint le bord gauche, inverser
+            if (position.getX() <= LIMITE_GAUCHE) {
+                position.setX(LIMITE_GAUCHE);
+                versLaDroite = true;
+            }
         }
     }
 
