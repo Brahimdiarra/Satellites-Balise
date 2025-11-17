@@ -6,7 +6,10 @@ import src.main.java.com.oceanographie.model.Balise;
 import src.main.java.com.oceanographie.model.Position;
 import src.main.java.com.oceanographie.view.SimulationPanel;
 
+
+import javax.swing.*;
 import java.awt.*;
+
 
 public class VueBalise {
     private Balise balise;
@@ -18,64 +21,61 @@ public class VueBalise {
     private static final Color COULEUR_COLLECTE = Color.CYAN;
     private static final Color COULEUR_REMONTEE = Color.YELLOW;
     private static final Color COULEUR_SURFACE = Color.GREEN;
-    private static final Color COULEUR_SYNCHRO = Color.MAGENTA;
+    private static final Color COULEUR_TRANSFERT = Color.RED;
+    private static final Color COULEUR_BORDURE_TRANSFERT = new Color(139, 0, 0);
 
     public VueBalise(Balise balise) {
         this.balise = balise;
 
-        // Créer le composant visuel
         composant = new NiEllipse();
         composant.setBounds(0, 0, TAILLE, TAILLE);
         composant.setBackground(COULEUR_COLLECTE);
         composant.setBorderColor(Color.WHITE);
         composant.setStrokeWidth(2);
 
-        // Label pour afficher l'ID (optionnel)
-        label = new NiLabel(balise.getId());
-        label.setForeground(Color.WHITE);
-        label.setFont(new Font("Arial", Font.BOLD, 10));
-
-        // Position initiale
         mettreAJour();
     }
 
     public void mettreAJour() {
         Position pos = balise.getPosition();
 
-        // Convertir la position 3D en 2D pour l'affichage
         int x = (int) pos.getX();
-
-        // La profondeur Z négative devient Y positif (vers le bas)
-        // Surface = NIVEAU_MER, plus profond = plus bas
         int y = SimulationPanel.getNiveauMer() + (int) Math.abs(pos.getZ());
 
         composant.setLocation(x - TAILLE/2, y - TAILLE/2);
-
-        // Mettre à jour le label
-        if (label != null) {
-            label.setLocation(x + TAILLE/2 + 5, y - TAILLE/2);
-        }
+        // ✅ Mettre à jour la couleur selon l'état actuel
+        updateCouleur(balise.getEtat());
     }
 
     public void onEtatChanged(Balise.EtatBalise nouvelEtat) {
-        // Changer la couleur selon l'état
-        switch (nouvelEtat) {
+        // ✅ Juste changer la couleur, sans appeler mettreAJour()
+        updateCouleur(nouvelEtat);
+    }
+
+    // ✅ Méthode privée pour changer la couleur (évite duplication)
+    private void updateCouleur(Balise.EtatBalise etat) {
+        switch (etat) {
             case COLLECTE:
                 composant.setBackground(COULEUR_COLLECTE);
+                composant.setBorderColor(Color.WHITE);
                 break;
+
             case REMONTEE:
                 composant.setBackground(COULEUR_REMONTEE);
+                composant.setBorderColor(Color.ORANGE);
                 break;
+
             case EN_SURFACE:
                 composant.setBackground(COULEUR_SURFACE);
+                composant.setBorderColor(Color.GREEN.darker());
                 break;
+
             case SYNCHRONISATION:
             case TRANSFERT:
-                composant.setBackground(COULEUR_SYNCHRO);
+                composant.setBackground(COULEUR_TRANSFERT);
+                composant.setBorderColor(COULEUR_BORDURE_TRANSFERT);
                 break;
         }
-
-        mettreAJour();
     }
 
     public NiEllipse getComponent() {

@@ -16,6 +16,7 @@ public class Balise extends ElementMobile  implements Observable{
     private long dureeCollecte = 30000;
     private StrategieDeplacementBalise strategieDeplacement;
     private List<Observateur> observateurs = new ArrayList<>();
+    private Satellite satelliteConnecte;
 
     @Override
     public void ajouterObservateur(Observateur obs) {
@@ -48,6 +49,7 @@ public class Balise extends ElementMobile  implements Observable{
         this.etat = EtatBalise.COLLECTE;
         this.debutCollecte = System.currentTimeMillis();
         this.strategieDeplacement = strategieDeplacement;
+        this.satelliteConnecte = null;
     }
 
     @Override
@@ -103,6 +105,20 @@ public class Balise extends ElementMobile  implements Observable{
         changerEtat(EtatBalise.COLLECTE);
     }
 
+
+    // les deux fonctions pour la gestion de transfer de donnees
+
+    public void commencerTransfert(Satellite satellite) {
+        this.satelliteConnecte = satellite;
+        changerEtat(EtatBalise.TRANSFERT);
+    }
+
+    public void terminerTransfert() {
+        this.satelliteConnecte = null;
+        // Redescendre et recommencer la collecte
+        recommencerCollecte();
+    }
+
     // Getters/Setters
 
 
@@ -144,5 +160,16 @@ public class Balise extends ElementMobile  implements Observable{
 
     public void setDureeCollecte(long dureeCollecte) {
         this.dureeCollecte = dureeCollecte;
+    }
+
+    public StrategieDeplacementBalise getStrategieDeplacement() {
+        return strategieDeplacement;
+    }
+    public void setStrategieDeplacement(  StrategieDeplacementBalise strategieDeplacement) {
+        this.strategieDeplacement = strategieDeplacement;
+    }
+
+    public void setSatelliteConnecte(Satellite satelliteConnecte) {
+        this.satelliteConnecte = satelliteConnecte;
     }
 }

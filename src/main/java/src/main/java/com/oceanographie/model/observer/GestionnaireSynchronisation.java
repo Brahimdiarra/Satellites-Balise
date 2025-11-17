@@ -1,5 +1,7 @@
 package src.main.java.com.oceanographie.model.observer;
 
+import src.main.java.com.eventHandler.EventHandler;
+import src.main.java.com.oceanographie.events.SynchronisationEvent;
 import src.main.java.com.oceanographie.model.Balise;
 import src.main.java.com.oceanographie.model.Satellite;
 
@@ -9,12 +11,13 @@ import java.util.List;
 public class GestionnaireSynchronisation implements Observateur {
     private List<Balise> balises;
     private List<Satellite> satellites;
-    private long tempsTransfert = 10000;
+    private EventHandler eventHandler;
+    private long dureeTransfert = 20000; // 20 secondes par défaut
 
-
-    public GestionnaireSynchronisation() {
-        balises = new ArrayList<Balise>();
-        satellites= new ArrayList<Satellite>();
+    public GestionnaireSynchronisation(EventHandler eventHandler) {
+        this.balises = new ArrayList<>();
+        this.satellites = new ArrayList<>();
+        this.eventHandler = eventHandler;
     }
 
     public void ajouterBalise(Balise balise) {
@@ -28,7 +31,7 @@ public class GestionnaireSynchronisation implements Observateur {
     }
 
     @Override
-    public void actualiser(src.main.java.com.oceanographie.model.observer.Observable observable) {
+    public void actualiser(Observable observable) {
         if (observable instanceof Balise) {
             Balise balise = (Balise) observable;
             if (balise.getEtat() == Balise.EtatBalise.EN_SURFACE) {
@@ -55,17 +58,30 @@ public class GestionnaireSynchronisation implements Observateur {
     }
 
     private void synchroniser(Balise balise, Satellite satellite) {
-        System.out.println("Synchronisation: " + balise.getId() +
-                " <-> " + satellite.getId());
+        System.out.println("🔗 SYNCHRONISATION: " + balise.getId() +
+                " ↔️ " + satellite.getId());
 
-        balise.changerEtat(Balise.EtatBalise.SYNCHRONISATION);
-        satellite.setDisponible(false);
+        // Changer les états
+        balise.commencerTransfert(satellite);
+        satellite.commencerTransfert(balise);
+
+        // Envoyer événement de début de synchronisation
+        SynchronisationEvent eventDebut = new SynchronisationEvent(
+                balise,
+                satellite,
+                SynchronisationEvent.TypeSync.DEBUT
+        );
+        eventHandler.send(eventDebut);
 
         // Simuler le transfert avec un timer
         new Thread(() -> {
             try {
-                Thread.sleep(tempsTransfert);
+                System.out.println("📡 Transfert en cours... (" +
+                        (dureeTransfert/1000) + " secondes)");
+                Thread.sleep(dureeTransfert);
+
                 terminerTransfert(balise, satellite);
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -73,12 +89,33 @@ public class GestionnaireSynchronisation implements Observateur {
     }
 
     private void terminerTransfert(Balise balise, Satellite satellite) {
-        System.out.println("Transfert terminé: " + balise.getId());
-        balise.recommencerCollecte();
-        satellite.setDisponible(true);
+        System.out.println("✅ Transfert terminé: " + balise.getId() +
+                " ↔️ " + satellite.getId());
+
+        // Remettre les états normaux
+        balise.terminerTransfert();
+        satellite.terminerTransfert();
+
+        // Envoyer événement de fin de synchronisation
+        SynchronisationEvent eventFin = new SynchronisationEvent(
+                balise,
+                satellite,
+                SynchronisationEvent.TypeSync.FIN
+        );
+        eventHandler.send(eventFin);
+    }
+
+    // ✅ NOUVELLE MÉTHODE - Définir la durée du transfert
+    public void setDureeTransfert(long dureeMs) {
+        this.dureeTransfert = dureeMs;
     }
 
     // Getters
-    public List<Balise> getBalises() { return balises; }
-    public List<Satellite> getSatellites() { return satellites; }
+    public List<Balise> getBalises() {
+        return balises;
+    }
+
+    public List<Satellite> getSatellites() {
+        return satellites;
+    }
 }
