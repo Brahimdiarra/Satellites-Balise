@@ -4,51 +4,59 @@ import src.main.java.com.nicellipse.component.NiEllipse;
 import src.main.java.com.oceanographie.model.Position;
 import src.main.java.com.oceanographie.model.Satellite;
 
+
+import javax.swing.*;
 import java.awt.*;
+
 
 public class VueSatellite {
     private Satellite satellite;
     private NiEllipse composant;
-    private boolean disponible;
     private static final int TAILLE = 30;
+
+    private static final Color COULEUR_DISPONIBLE = Color.ORANGE;
+    private static final Color COULEUR_BORDURE_DISPONIBLE = Color.YELLOW;
+    private static final Color COULEUR_TRANSFERT = Color.RED;
+    private static final Color COULEUR_BORDURE_TRANSFERT = new Color(139, 0, 0);
 
     public VueSatellite(Satellite satellite) {
         this.satellite = satellite;
-        this.disponible = true;
 
-        // Créer le composant visuel Nicellipse
         composant = new NiEllipse();
         composant.setBounds(0, 0, TAILLE, TAILLE);
-        composant.setBackground(Color.ORANGE);
-        composant.setBorderColor(Color.YELLOW);
+        composant.setBackground(COULEUR_DISPONIBLE);
+        composant.setBorderColor(COULEUR_BORDURE_DISPONIBLE);
         composant.setStrokeWidth(2);
 
-        // Position initiale
         mettreAJour();
     }
 
     public void mettreAJour() {
         Position pos = satellite.getPosition();
 
-        // Convertir la position du modèle en coordonnées d'écran
         int x = (int) pos.getX();
         int y = (int) pos.getY();
 
         composant.setLocation(x - TAILLE/2, y - TAILLE/2);
 
-        // Changer la couleur selon la disponibilité
-        if (disponible) {
-            composant.setBackground(Color.ORANGE);
-            composant.setBorderColor(Color.YELLOW);
-        } else {
-            composant.setBackground(Color.RED);
-            composant.setBorderColor(Color.DARK_GRAY);
-        }
+        // ✅ Mettre à jour la couleur
+        updateCouleur();
     }
 
     public void setDisponible(boolean disponible) {
-        this.disponible = disponible;
-        mettreAJour();
+        // ✅ Juste changer la couleur
+        updateCouleur();
+    }
+
+    // ✅ Méthode privée pour changer la couleur
+    private void updateCouleur() {
+        if (satellite.isDisponible()) {
+            composant.setBackground(COULEUR_DISPONIBLE);
+            composant.setBorderColor(COULEUR_BORDURE_DISPONIBLE);
+        } else {
+            composant.setBackground(COULEUR_TRANSFERT);
+            composant.setBorderColor(COULEUR_BORDURE_TRANSFERT);
+        }
     }
 
     public NiEllipse getComponent() {
