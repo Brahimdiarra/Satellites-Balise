@@ -25,14 +25,16 @@ public class SimulationController {
     private boolean enCours;
     private int vitesseSimulation;
     private Random random;
+    private int compteurSynchronisations; // ✅ Nouveau
 
     public SimulationController() {
         this.eventHandler = new EventHandler();
-        this.gestionnaire = new GestionnaireSynchronisation();
+        this.gestionnaire = new GestionnaireSynchronisation(eventHandler);
         this.simulationPanel = new SimulationPanel(eventHandler);
         this.vitesseSimulation = 5;
         this.enCours = false;
         this.random = new Random();
+        this.compteurSynchronisations = 0; // ✅ Nouveau
 
         // Timer pour la boucle de simulation (60 FPS)
         timer = new Timer(16, e -> {
@@ -64,53 +66,61 @@ public class SimulationController {
         if (!enCours) {
             enCours = true;
             timer.start();
-            System.out.println("Simulation démarrée");
+            System.out.println("▶️ Simulation démarrée");
         }
     }
 
     public void pauseSimulation() {
         enCours = false;
-        System.out.println("Simulation en pause");
+        System.out.println("⏸️ Simulation en pause");
     }
 
     public void stopSimulation() {
         enCours = false;
         timer.stop();
-        System.out.println("Simulation arrêtée");
+        System.out.println("⏹️ Simulation arrêtée");
     }
 
     public void setVitesseSimulation(int vitesse) {
         this.vitesseSimulation = vitesse;
-        // Ajuster le délai du timer (plus rapide = délai plus court)
         timer.setDelay(Math.max(5, 20 - vitesse * 2));
+    }
+
+    // ✅ NOUVELLE MÉTHODE - Définir la durée du transfert
+    public void setDureeTransfert(int secondes) {
+        gestionnaire.setDureeTransfert(secondes * 1000L); // Convertir en millisecondes
+        System.out.println("⏱️ Durée de transfert définie à " + secondes + " secondes");
+    }
+
+    // ✅ NOUVELLE MÉTHODE - Incrémenter le compteur de synchronisations
+    public void incrementerCompteurSyncs() {
+        compteurSynchronisations++;
     }
 
     // Ajouter un satellite
     public void ajouterSatellite(Satellite satellite) {
         gestionnaire.ajouterSatellite(satellite);
 
-        // Créer la vue
         VueSatellite vue = new VueSatellite(satellite);
         simulationPanel.ajouterVueSatellite(vue);
 
-        System.out.println("Satellite ajouté: " + satellite.getId());
+        System.out.println("🛰️ Satellite ajouté: " + satellite.getId());
     }
 
     // Ajouter une balise
     public void ajouterBalise(Balise balise) {
         gestionnaire.ajouterBalise(balise);
 
-        // Créer la vue
         VueBalise vue = new VueBalise(balise);
         simulationPanel.ajouterVueBalise(vue);
 
-        System.out.println("Balise ajoutée: " + balise.getId());
+        System.out.println("🔵 Balise ajoutée: " + balise.getId());
     }
 
     // Ajouter un satellite à position aléatoire
     public void ajouterSatelliteAleatoire() {
         int x = random.nextInt(SimulationPanel.getLargeur());
-        int y = random.nextInt(SimulationPanel.getNiveauMer() - 50);
+        int y = 30 + random.nextInt(150); // Entre 30 et 180
 
         Satellite sat = new Satellite(
                 "SAT-" + (gestionnaire.getSatellites().size() + 1),
@@ -125,21 +135,25 @@ public class SimulationController {
     // Ajouter une balise à position aléatoire
     public void ajouterBaliseAleatoire() {
         int x = random.nextInt(SimulationPanel.getLargeur());
-        double profondeur = -50 - random.nextInt(200);
+        double profondeur = -50 - random.nextInt(200); // Entre -50 et -250
 
         // Stratégie aléatoire
         StrategieDeplacementBalise strategie;
-        int type = random.nextInt(3);
+        int type = random.nextInt(4);
         switch (type) {
             case 0:
-                strategie = new DeplacementHorizontal(1.0);
+                strategie = new DeplacementHorizontal(1.5);
+                System.out.println("  └─ Stratégie: Horizontal");
                 break;
             case 1:
-                strategie = new DeplacementVerticale(0.5, -50, -200);
+                strategie = new DeplacementVerticale(0.8, -50, -200);
+                System.out.println("  └─ Stratégie: Vertical");
                 break;
             default:
-                strategie = new DeplacementSinusoidal(30, 0.1);
+                strategie = new DeplacementSinusoidal(40, 0.1);
+                System.out.println("  └─ Stratégie: Sinusoïdal");
                 break;
+
         }
 
         Balise balise = new Balise(
@@ -153,6 +167,19 @@ public class SimulationController {
         ajouterBalise(balise);
     }
 
+    // ✅ NOUVELLES MÉTHODES pour les statistiques
+    public int getNombreSatellites() {
+        return gestionnaire.getSatellites().size();
+    }
+
+    public int getNombreBalises() {
+        return gestionnaire.getBalises().size();
+    }
+
+    public int getNombreSynchronisations() {
+        return compteurSynchronisations;
+    }
+
     // Getters
     public SimulationPanel getSimulationPanel() {
         return simulationPanel;
@@ -160,5 +187,9 @@ public class SimulationController {
 
     public EventHandler getEventHandler() {
         return eventHandler;
+    }
+
+    public GestionnaireSynchronisation getGestionnaire() {
+        return gestionnaire;
     }
 }

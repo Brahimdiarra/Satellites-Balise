@@ -12,6 +12,7 @@ public class Satellite extends ElementMobile implements Observable {
     private double rayonCouverture; // Zone de détection
     private List<Observateur> observateurs = new ArrayList<>();
     private boolean versLaDroite;
+    private Balise baliseConnectee;
 
     public Satellite(String id, Position position, double hauteur) {
         super(id, position, 5.0); // Vitesse par défaut
@@ -19,6 +20,7 @@ public class Satellite extends ElementMobile implements Observable {
         this.disponible = true;
         this.rayonCouverture = 100.0; // Rayon de couverture
         this.versLaDroite = true;
+        this.baliseConnectee = null;
     }
 
     @Override
@@ -55,6 +57,21 @@ public class Satellite extends ElementMobile implements Observable {
         return distance <= rayonCouverture;
     }
 
+
+    /* les fonctions de transfert des donnes entre les balises et les sattelites*/
+
+    public void commencerTransfert(Balise balise) {
+        this.baliseConnectee = balise;
+        this.disponible = false;
+        notifierObservateurs();
+    }
+
+    public void terminerTransfert() {
+        this.baliseConnectee = null;
+        this.disponible = true;
+        notifierObservateurs();
+    }
+
     // Getters/Setters
 
     public double getHauteur() {
@@ -69,9 +86,18 @@ public class Satellite extends ElementMobile implements Observable {
         return disponible;
     }
 
+
+
     public void setDisponible(boolean disponible) {
-        this.disponible = disponible;
+        if (this.disponible != disponible) {
+            this.disponible = disponible;
+            System.out.println("🛰️ Satellite " + id + " : " +
+                    (disponible ? "DISPONIBLE" : "OCCUPÉ"));
+            notifierObservateurs();
+        }
     }
+
+
 
     public double getRayonCouverture() {
         return rayonCouverture;
