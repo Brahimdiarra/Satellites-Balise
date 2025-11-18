@@ -1,6 +1,5 @@
 package src.main.java.com.oceanographie.model;
 
-
 import src.main.java.com.oceanographie.model.deplacement.StrategieDeplacementBalise;
 import src.main.java.com.oceanographie.model.observer.Observable;
 import src.main.java.com.oceanographie.model.observer.Observateur;
@@ -11,7 +10,7 @@ import src.main.java.com.oceanographie.events.SynchronisationEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Balise extends ElementMobile  implements Observable{
+public class Balise extends ElementMobile implements Observable {
     private double profondeur;
     private EtatBalise etat;
     private long tempsCollecte;
@@ -21,6 +20,11 @@ public class Balise extends ElementMobile  implements Observable{
     private List<Observateur> observateurs = new ArrayList<>();
     private Satellite satelliteConnecte;
     private EventHandler eventHandler;
+    // pour notifier les observateurs seulement si la position a changé suffisamment
+    private double lastNotifiedX;
+    private double lastNotifiedY;
+    private double lastNotifiedZ;
+    private static final double MOVEMENT_NOTIFY_THRESHOLD = 0.1; // en unités de position
 
     @Override
     public void ajouterObservateur(Observateur obs) {
@@ -29,12 +33,12 @@ public class Balise extends ElementMobile  implements Observable{
 
     @Override
     public void retirerObservateur(Observateur obs) {
-      observateurs.remove(obs);
+        observateurs.remove(obs);
     }
 
     @Override
     public void notifierObservateurs() {
-        for(Observateur obs : observateurs){
+        for (Observateur obs : observateurs) {
             obs.actualiser(this);
         }
     }
@@ -47,13 +51,19 @@ public class Balise extends ElementMobile  implements Observable{
         TRANSFERT
     }
 
-    public Balise(String id, Position position, double profondeur , StrategieDeplacementBalise strategieDeplacement) {
+    public Balise(String id, Position position, double profondeur, StrategieDeplacementBalise strategieDeplacement) {
         super(id, position, 2.0);
         this.profondeur = profondeur;
         this.etat = EtatBalise.COLLECTE;
         this.debutCollecte = System.currentTimeMillis();
         this.strategieDeplacement = strategieDeplacement;
         this.satelliteConnecte = null;
+        // initialiser le dernier point notifié
+        if (position != null) {
+            this.lastNotifiedX = position.getX();
+            this.lastNotifiedY = position.getY();
+            this.lastNotifiedZ = position.getZ();
+        }
     }
 
     public void setEventHandler(EventHandler eventHandler) {
@@ -62,7 +72,12 @@ public class Balise extends ElementMobile  implements Observable{
 
     @Override
     public void deplacer() {
-        if (!actif) return;
+        if (!actif)
+            return;
+        // position avant déplacement
+        double beforeX = position.getX();
+        double beforeY = position.getY();
+        double beforeZ = position.getZ();
 
         switch (etat) {
             case COLLECTE:
@@ -83,6 +98,18 @@ public class Balise extends ElementMobile  implements Observable{
             case SYNCHRONISATION:
             case TRANSFERT:
                 break;
+        }
+
+        // notifier les observateurs si la position a changé au-delà du seuil
+        double dx = Math.abs(position.getX() - lastNotifiedX);
+        double dy = Math.abs(position.getY() - lastNotifiedY);
+        double dz = Math.abs(position.getZ() - lastNotifiedZ);
+        if (dx > MOVEMENT_NOTIFY_THRESHOLD || dy > MOVEMENT_NOTIFY_THRESHOLD || dz > MOVEMENT_NOTIFY_THRESHOLD) {
+            // mettre à jour le dernier point notifié
+            lastNotifiedX = position.getX();
+            lastNotifiedY = position.getY();
+            lastNotifiedZ = position.getZ();
+            notifierObservateurs();
         }
     }
 
@@ -119,7 +146,6 @@ public class Balise extends ElementMobile  implements Observable{
         changerEtat(EtatBalise.COLLECTE);
     }
 
-
     // les deux fonctions pour la gestion de transfer de donnees
 
     public void commencerTransfert(Satellite satellite) {
@@ -142,7 +168,6 @@ public class Balise extends ElementMobile  implements Observable{
     }
 
     // Getters/Setters
-
 
     public double getProfondeur() {
         return profondeur;
@@ -187,7 +212,8 @@ public class Balise extends ElementMobile  implements Observable{
     public StrategieDeplacementBalise getStrategieDeplacement() {
         return strategieDeplacement;
     }
-    public void setStrategieDeplacement(  StrategieDeplacementBalise strategieDeplacement) {
+
+    public void setStrategieDeplacement(StrategieDeplacementBalise strategieDeplacement) {
         this.strategieDeplacement = strategieDeplacement;
     }
 
