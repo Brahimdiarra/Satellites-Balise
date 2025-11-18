@@ -99,6 +99,8 @@ public class SimulationController {
 
     // Ajouter un satellite
     public void ajouterSatellite(Satellite satellite) {
+        // lier le EventHandler au satellite
+        satellite.setEventHandler(this.eventHandler);
         gestionnaire.ajouterSatellite(satellite);
 
         VueSatellite vue = new VueSatellite(satellite);
@@ -109,6 +111,8 @@ public class SimulationController {
 
     // Ajouter une balise
     public void ajouterBalise(Balise balise) {
+        // lier le EventHandler à la balise
+        balise.setEventHandler(this.eventHandler);
         gestionnaire.ajouterBalise(balise);
 
         VueBalise vue = new VueBalise(balise);
@@ -127,7 +131,9 @@ public class SimulationController {
                 new Position(x, y, 0),
                 200
         );
-        sat.start();
+    // lier le EventHandler avant de démarrer
+    sat.setEventHandler(this.eventHandler);
+    sat.start();
 
         ajouterSatellite(sat);
     }
@@ -162,7 +168,9 @@ public class SimulationController {
                 Math.abs(profondeur),
                 strategie
         );
-        balise.start();
+    // lier le EventHandler avant de démarrer
+    balise.setEventHandler(this.eventHandler);
+    balise.start();
 
         ajouterBalise(balise);
     }

@@ -163,6 +163,7 @@ public class SimulationPanel extends JPanel implements
         });
     }
 
+
     public static int getNiveauMer() {
         return NIVEAU_MER;
     }

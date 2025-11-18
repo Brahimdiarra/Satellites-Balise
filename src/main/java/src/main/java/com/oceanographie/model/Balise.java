@@ -4,6 +4,9 @@ package src.main.java.com.oceanographie.model;
 import src.main.java.com.oceanographie.model.deplacement.StrategieDeplacementBalise;
 import src.main.java.com.oceanographie.model.observer.Observable;
 import src.main.java.com.oceanographie.model.observer.Observateur;
+import src.main.java.com.eventHandler.EventHandler;
+import src.main.java.com.oceanographie.events.BaliseEvent;
+import src.main.java.com.oceanographie.events.SynchronisationEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +20,7 @@ public class Balise extends ElementMobile  implements Observable{
     private StrategieDeplacementBalise strategieDeplacement;
     private List<Observateur> observateurs = new ArrayList<>();
     private Satellite satelliteConnecte;
+    private EventHandler eventHandler;
 
     @Override
     public void ajouterObservateur(Observateur obs) {
@@ -50,6 +54,10 @@ public class Balise extends ElementMobile  implements Observable{
         this.debutCollecte = System.currentTimeMillis();
         this.strategieDeplacement = strategieDeplacement;
         this.satelliteConnecte = null;
+    }
+
+    public void setEventHandler(EventHandler eventHandler) {
+        this.eventHandler = eventHandler;
     }
 
     @Override
@@ -95,8 +103,14 @@ public class Balise extends ElementMobile  implements Observable{
     }
 
     public void changerEtat(EtatBalise nouvelEtat) {
+        EtatBalise ancien = this.etat;
         this.etat = nouvelEtat;
         System.out.println("Balise " + id + " : " + etat);
+        // envoyer l'événement via EventHandler si disponible
+        if (this.eventHandler != null) {
+            this.eventHandler.send(new BaliseEvent(this, ancien, nouvelEtat));
+        }
+        // compatibilité avec l'ancien système d'observateurs
         notifierObservateurs();
     }
 
@@ -111,10 +125,18 @@ public class Balise extends ElementMobile  implements Observable{
     public void commencerTransfert(Satellite satellite) {
         this.satelliteConnecte = satellite;
         changerEtat(EtatBalise.TRANSFERT);
+        if (this.eventHandler != null) {
+            this.eventHandler.send(new SynchronisationEvent(this, satellite, SynchronisationEvent.TypeSync.DEBUT));
+        }
     }
 
     public void terminerTransfert() {
+        Satellite sat = this.satelliteConnecte;
         this.satelliteConnecte = null;
+        // envoyer événement FIN avant de recommencer
+        if (this.eventHandler != null && sat != null) {
+            this.eventHandler.send(new SynchronisationEvent(this, sat, SynchronisationEvent.TypeSync.FIN));
+        }
         // Redescendre et recommencer la collecte
         recommencerCollecte();
     }

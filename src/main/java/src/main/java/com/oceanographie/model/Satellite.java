@@ -2,6 +2,9 @@ package src.main.java.com.oceanographie.model;
 
 import src.main.java.com.oceanographie.model.observer.Observable;
 import src.main.java.com.oceanographie.model.observer.Observateur;
+import src.main.java.com.eventHandler.EventHandler;
+import src.main.java.com.oceanographie.events.SatelliteEvent;
+import src.main.java.com.oceanographie.events.SynchronisationEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +16,7 @@ public class Satellite extends ElementMobile implements Observable {
     private List<Observateur> observateurs = new ArrayList<>();
     private boolean versLaDroite;
     private Balise baliseConnectee;
+    private EventHandler eventHandler;
 
     public Satellite(String id, Position position, double hauteur) {
         super(id, position, 5.0); // Vitesse par défaut
@@ -21,6 +25,10 @@ public class Satellite extends ElementMobile implements Observable {
         this.rayonCouverture = 100.0; // Rayon de couverture
         this.versLaDroite = true;
         this.baliseConnectee = null;
+    }
+
+    public void setEventHandler(EventHandler eventHandler) {
+        this.eventHandler = eventHandler;
     }
 
     @Override
@@ -63,12 +71,22 @@ public class Satellite extends ElementMobile implements Observable {
     public void commencerTransfert(Balise balise) {
         this.baliseConnectee = balise;
         this.disponible = false;
+        // envoyer événements via EventHandler
+        if (this.eventHandler != null) {
+            this.eventHandler.send(new SynchronisationEvent(balise, this, SynchronisationEvent.TypeSync.DEBUT));
+            this.eventHandler.send(new SatelliteEvent(this, false));
+        }
         notifierObservateurs();
     }
 
     public void terminerTransfert() {
+        Balise b = this.baliseConnectee;
         this.baliseConnectee = null;
         this.disponible = true;
+        if (this.eventHandler != null && b != null) {
+            this.eventHandler.send(new SynchronisationEvent(b, this, SynchronisationEvent.TypeSync.FIN));
+            this.eventHandler.send(new SatelliteEvent(this, true));
+        }
         notifierObservateurs();
     }
 
@@ -93,6 +111,9 @@ public class Satellite extends ElementMobile implements Observable {
             this.disponible = disponible;
             System.out.println("🛰️ Satellite " + id + " : " +
                     (disponible ? "DISPONIBLE" : "OCCUPÉ"));
+            if (this.eventHandler != null) {
+                this.eventHandler.send(new SatelliteEvent(this, disponible));
+            }
             notifierObservateurs();
         }
     }
