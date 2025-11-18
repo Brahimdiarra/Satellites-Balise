@@ -120,7 +120,7 @@ public class SimulationController {
     // Ajouter un satellite à position aléatoire
     public void ajouterSatelliteAleatoire() {
         int x = random.nextInt(SimulationPanel.getLargeur());
-        int y = 30 + random.nextInt(150); // Entre 30 et 180
+        int y = 10 + random.nextInt(70); // Entre 30 et 180
 
         Satellite sat = new Satellite(
                 "SAT-" + (gestionnaire.getSatellites().size() + 1),

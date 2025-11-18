@@ -495,4 +495,4 @@ Ce diagramme montre l'intégration de tous les patterns dans la structure global
 - Comment les patterns fonctionnent ensemble
 ```
 
-Tous les diagrammes sont prêts et disponibles dans le dossier outputs ! 🎉
+
