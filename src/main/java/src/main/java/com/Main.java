@@ -16,7 +16,7 @@ public class Main {
             SimulationController controller = new SimulationController();
 
             // ✅ Définir la durée du transfert (20 secondes)
-            controller.setDureeTransfert(20);
+            controller.setDureeTransfert(1);
 
             // Créer la fenêtre principale
             MainWindow window = new MainWindow(controller);

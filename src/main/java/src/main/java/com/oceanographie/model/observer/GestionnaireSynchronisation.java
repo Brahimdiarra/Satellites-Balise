@@ -12,7 +12,7 @@ public class GestionnaireSynchronisation implements Observateur {
     private List<Balise> balises;
     private List<Satellite> satellites;
     private EventHandler eventHandler;
-    private long dureeTransfert = 20000; // 20 secondes par défaut
+    private long dureeTransfert = 1000; // 2 secondes par défaut
 
     public GestionnaireSynchronisation(EventHandler eventHandler) {
         this.balises = new ArrayList<>();
