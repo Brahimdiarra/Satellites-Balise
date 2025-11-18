@@ -13,7 +13,7 @@ public class Balise extends ElementMobile  implements Observable{
     private EtatBalise etat;
     private long tempsCollecte;
     private long debutCollecte;
-    private long dureeCollecte = 30000;
+    private long dureeCollecte = 9000;
     private StrategieDeplacementBalise strategieDeplacement;
     private List<Observateur> observateurs = new ArrayList<>();
     private Satellite satelliteConnecte;
