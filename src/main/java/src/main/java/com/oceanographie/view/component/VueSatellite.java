@@ -1,18 +1,21 @@
 package src.main.java.com.oceanographie.view.component;
 
-import src.main.java.com.nicellipse.component.NiEllipse;
 import src.main.java.com.oceanographie.model.Position;
 import src.main.java.com.oceanographie.model.Satellite;
 
-
-import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
-
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class VueSatellite {
     private Satellite satellite;
-    private NiEllipse composant;
-    private static final int TAILLE = 30;
+    private BufferedImage image;
+    private boolean utiliseImage;
+    private static final int TAILLE = 50;
+
+    private int x, y; // Position actuelle
 
     private static final Color COULEUR_DISPONIBLE = Color.ORANGE;
     private static final Color COULEUR_BORDURE_DISPONIBLE = Color.YELLOW;
@@ -21,46 +24,76 @@ public class VueSatellite {
 
     public VueSatellite(Satellite satellite) {
         this.satellite = satellite;
+        this.utiliseImage = false;
 
-        composant = new NiEllipse();
-        composant.setBounds(0, 0, TAILLE, TAILLE);
-        composant.setBackground(COULEUR_DISPONIBLE);
-        composant.setBorderColor(COULEUR_BORDURE_DISPONIBLE);
-        composant.setStrokeWidth(2);
+        try {
+            File imageFile = new File("src/main/resources/images/satellite_transparent.png");
+            if (imageFile.exists()) {
+                BufferedImage rawImage = ImageIO.read(imageFile);
+
+                // Redimensionner l'image
+                image = new BufferedImage(TAILLE, TAILLE, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = image.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.drawImage(rawImage, 0, 0, TAILLE, TAILLE, null);
+                g2d.dispose();
+
+                utiliseImage = true;
+                System.out.println("✅ Image satellite chargée (BufferedImage)");
+            } else {
+                System.out.println("⚠️ Image satellite non trouvée");
+                utiliseImage = false;
+            }
+        } catch (IOException e) {
+            System.out.println("❌ Erreur: " + e.getMessage());
+            e.printStackTrace();
+            utiliseImage = false;
+        }
 
         mettreAJour();
     }
 
     public void mettreAJour() {
         Position pos = satellite.getPosition();
-
-        int x = (int) pos.getX();
-        int y = (int) pos.getY();
-
-        composant.setLocation(x - TAILLE/2, y - TAILLE/2);
-
-        // ✅ Mettre à jour la couleur
-        updateCouleur();
+        this.x = (int) pos.getX();
+        this.y = (int) pos.getY();
     }
 
-    public void setDisponible(boolean disponible) {
-        // ✅ Juste changer la couleur
-        updateCouleur();
-    }
+    // ✅ Méthode pour dessiner le satellite
+    public void dessiner(Graphics2D g2d) {
+        if (utiliseImage && image != null) {
+            // Dessiner l'image
+            g2d.drawImage(image, x - TAILLE/2, y - TAILLE/2, null);
 
-    // ✅ Méthode privée pour changer la couleur
-    private void updateCouleur() {
-        if (satellite.isDisponible()) {
-            composant.setBackground(COULEUR_DISPONIBLE);
-            composant.setBorderColor(COULEUR_BORDURE_DISPONIBLE);
+            // Ajouter un contour rouge si occupé
+            if (!satellite.isDisponible()) {
+                g2d.setColor(new Color(255, 0, 0, 150));
+                g2d.setStroke(new BasicStroke(3));
+                g2d.drawOval(x - TAILLE/2, y - TAILLE/2, TAILLE, TAILLE);
+            }
         } else {
-            composant.setBackground(COULEUR_TRANSFERT);
-            composant.setBorderColor(COULEUR_BORDURE_TRANSFERT);
+            // Dessiner une ellipse par défaut
+            if (satellite.isDisponible()) {
+                g2d.setColor(COULEUR_DISPONIBLE);
+            } else {
+                g2d.setColor(COULEUR_TRANSFERT);
+            }
+            g2d.fillOval(x - TAILLE/2, y - TAILLE/2, TAILLE, TAILLE);
+
+            // Bordure
+            if (satellite.isDisponible()) {
+                g2d.setColor(COULEUR_BORDURE_DISPONIBLE);
+            } else {
+                g2d.setColor(COULEUR_BORDURE_TRANSFERT);
+            }
+            g2d.setStroke(new BasicStroke(3));
+            g2d.drawOval(x - TAILLE/2, y - TAILLE/2, TAILLE, TAILLE);
         }
     }
 
-    public NiEllipse getComponent() {
-        return composant;
+    public void setDisponible(boolean disponible) {
+        // Pas besoin de faire quoi que ce soit, sera mis à jour au prochain repaint
     }
 
     public Satellite getSatellite() {
@@ -68,9 +101,6 @@ public class VueSatellite {
     }
 
     public Point getPosition() {
-        return new Point(
-                composant.getX() + TAILLE/2,
-                composant.getY() + TAILLE/2
-        );
+        return new Point(x, y);
     }
 }
