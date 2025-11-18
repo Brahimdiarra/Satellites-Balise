@@ -12,7 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-public class SimulationPanel extends JPanel implements  // ✅ JPanel au lieu de JComponent
+public class SimulationPanel extends JPanel implements
         BaliseEventListener,
         SatelliteEventListener,
         SynchronisationEventListener {
@@ -37,9 +37,7 @@ public class SimulationPanel extends JPanel implements  // ✅ JPanel au lieu de
         this.vuesSynchronisations = new ArrayList<>();
 
         setPreferredSize(new Dimension(LARGEUR, HAUTEUR));
-        setLayout(null); // ✅ Layout null pour positionnement absolu
         setBackground(Color.BLACK);
-        setDoubleBuffered(true); // ✅ Pour un meilleur rendu
 
         vueOcean = new VueOcean(LARGEUR, HAUTEUR, NIVEAU_MER);
 
@@ -48,50 +46,17 @@ public class SimulationPanel extends JPanel implements  // ✅ JPanel au lieu de
         eventHandler.registerListener(SynchronisationEvent.class, this);
     }
 
+    // ✅ Plus besoin de add() les composants
     public void ajouterVueSatellite(VueSatellite vue) {
         vuesSatellites.add(vue);
-
-        // ✅ Ajouter le composant au panel
-        JComponent comp = vue.getComponent();
-        this.add(comp);
-        comp.setVisible(true);
-
-        // ✅ Positionner le composant
-        vue.mettreAJour();
-
-        System.out.println("🛰️ Satellite ajouté - Total: " + vuesSatellites.size());
-        System.out.println("   Position: " + comp.getX() + "," + comp.getY());
-        System.out.println("   Taille: " + comp.getWidth() + "x" + comp.getHeight());
-        System.out.println("   Visible: " + comp.isVisible());
-
-        revalidate();
         repaint();
+        System.out.println("🛰️ Satellite ajouté - Total: " + vuesSatellites.size());
     }
 
     public void ajouterVueBalise(VueBalise vue) {
         vuesBalises.add(vue);
-
-        // ✅ Ajouter le composant au panel
-        JComponent comp = vue.getComponent();
-        this.add(comp);
-        comp.setVisible(true);
-
-        // ✅ Ajouter le label
-        if (vue.getLabel() != null) {
-            this.add(vue.getLabel());
-            vue.getLabel().setVisible(true);
-        }
-
-        // ✅ Positionner les composants
-        vue.mettreAJour();
-
-        System.out.println("🔵 Balise ajoutée - Total: " + vuesBalises.size());
-        System.out.println("   Position: " + comp.getX() + "," + comp.getY());
-        System.out.println("   Taille: " + comp.getWidth() + "x" + comp.getHeight());
-        System.out.println("   Visible: " + comp.isVisible());
-
-        revalidate();
         repaint();
+        System.out.println("🔵 Balise ajoutée - Total: " + vuesBalises.size());
     }
 
     public void mettreAJour() {
@@ -120,6 +85,16 @@ public class SimulationPanel extends JPanel implements  // ✅ JPanel au lieu de
             sync.dessiner(g2d);
         }
 
+        // ✅ Dessiner les satellites directement
+        for (VueSatellite vue : vuesSatellites) {
+            vue.dessiner(g2d);
+        }
+
+        // ✅ Dessiner les balises directement
+        for (VueBalise vue : vuesBalises) {
+            vue.dessiner(g2d);
+        }
+
         // Ligne de mer
         g2d.setColor(Color.CYAN);
         g2d.setStroke(new BasicStroke(2));
@@ -127,18 +102,6 @@ public class SimulationPanel extends JPanel implements  // ✅ JPanel au lieu de
 
         // Légende
         dessinerLegende(g2d);
-
-        // ✅ Debug: dessiner les rectangles des composants
-        /*g2d.setColor(Color.RED);
-        g2d.setStroke(new BasicStroke(1));
-        for (VueSatellite vue : vuesSatellites) {
-            JComponent comp = vue.getComponent();
-            g2d.drawRect(comp.getX(), comp.getY(), comp.getWidth(), comp.getHeight());
-        }
-        for (VueBalise vue : vuesBalises) {
-            JComponent comp = vue.getComponent();
-            g2d.drawRect(comp.getX(), comp.getY(), comp.getWidth(), comp.getHeight());
-        }*/
     }
 
     private void dessinerLegende(Graphics2D g2d) {
@@ -199,8 +162,6 @@ public class SimulationPanel extends JPanel implements  // ✅ JPanel au lieu de
             repaint();
         });
     }
-
-
 
     public static int getNiveauMer() {
         return NIVEAU_MER;
