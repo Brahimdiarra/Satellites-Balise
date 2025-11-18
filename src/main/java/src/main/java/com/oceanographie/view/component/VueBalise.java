@@ -1,21 +1,22 @@
 package src.main.java.com.oceanographie.view.component;
 
-import src.main.java.com.nicellipse.component.NiEllipse;
-import src.main.java.com.nicellipse.component.NiLabel;
 import src.main.java.com.oceanographie.model.Balise;
 import src.main.java.com.oceanographie.model.Position;
 import src.main.java.com.oceanographie.view.SimulationPanel;
 
-
-import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
-
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class VueBalise {
     private Balise balise;
-    private NiEllipse composant;
-    private NiLabel label;
-    private static final int TAILLE = 20;
+    private BufferedImage image;
+    private boolean utiliseImage;
+    private static final int TAILLE = 40;
+
+    private int x, y; // Position actuelle
 
     // Couleurs selon l'état
     private static final Color COULEUR_COLLECTE = Color.CYAN;
@@ -26,64 +27,87 @@ public class VueBalise {
 
     public VueBalise(Balise balise) {
         this.balise = balise;
+        this.utiliseImage = false;
 
-        composant = new NiEllipse();
-        composant.setBounds(0, 0, TAILLE, TAILLE);
-        composant.setBackground(COULEUR_COLLECTE);
-        composant.setBorderColor(Color.WHITE);
-        composant.setStrokeWidth(2);
+        try {
+            File imageFile = new File("src/main/resources/images/balise_transparent.png");
+            if (imageFile.exists()) {
+                BufferedImage rawImage = ImageIO.read(imageFile);
+
+                // Redimensionner l'image
+                image = new BufferedImage(TAILLE, TAILLE, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = image.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.drawImage(rawImage, 0, 0, TAILLE, TAILLE, null);
+                g2d.dispose();
+
+                utiliseImage = true;
+                System.out.println("✅ Image balise chargée (BufferedImage)");
+            } else {
+                System.out.println("⚠️ Image balise non trouvée");
+                utiliseImage = false;
+            }
+        } catch (IOException e) {
+            System.out.println("❌ Erreur: " + e.getMessage());
+            e.printStackTrace();
+            utiliseImage = false;
+        }
 
         mettreAJour();
     }
 
     public void mettreAJour() {
         Position pos = balise.getPosition();
+        this.x = (int) pos.getX();
+        this.y = SimulationPanel.getNiveauMer() + (int) Math.abs(pos.getZ());
+    }
 
-        int x = (int) pos.getX();
-        int y = SimulationPanel.getNiveauMer() + (int) Math.abs(pos.getZ());
+    // ✅ Méthode pour dessiner la balise
+    public void dessiner(Graphics2D g2d) {
+        if (utiliseImage && image != null) {
+            // Dessiner l'image
+            g2d.drawImage(image, x - TAILLE/2, y - TAILLE/2, null);
+        } else {
+            // Dessiner une ellipse avec la couleur selon l'état
+            Color couleur = getCouleurEtat(balise.getEtat());
+            g2d.setColor(couleur);
+            g2d.fillOval(x - TAILLE/2, y - TAILLE/2, TAILLE, TAILLE);
 
-        composant.setLocation(x - TAILLE/2, y - TAILLE/2);
-        // ✅ Mettre à jour la couleur selon l'état actuel
-        updateCouleur(balise.getEtat());
+            // Bordure
+            Color couleurBordure = getCouleurBordure(balise.getEtat());
+            g2d.setColor(couleurBordure);
+            g2d.setStroke(new BasicStroke(3));
+            g2d.drawOval(x - TAILLE/2, y - TAILLE/2, TAILLE, TAILLE);
+        }
+
+
     }
 
     public void onEtatChanged(Balise.EtatBalise nouvelEtat) {
-        // ✅ Juste changer la couleur, sans appeler mettreAJour()
-        updateCouleur(nouvelEtat);
+        // Pas besoin de faire quoi que ce soit, sera mis à jour au prochain repaint
     }
 
-    // ✅ Méthode privée pour changer la couleur (évite duplication)
-    private void updateCouleur(Balise.EtatBalise etat) {
+    private Color getCouleurEtat(Balise.EtatBalise etat) {
         switch (etat) {
-            case COLLECTE:
-                composant.setBackground(COULEUR_COLLECTE);
-                composant.setBorderColor(Color.WHITE);
-                break;
-
-            case REMONTEE:
-                composant.setBackground(COULEUR_REMONTEE);
-                composant.setBorderColor(Color.ORANGE);
-                break;
-
-            case EN_SURFACE:
-                composant.setBackground(COULEUR_SURFACE);
-                composant.setBorderColor(Color.GREEN.darker());
-                break;
-
+            case COLLECTE: return COULEUR_COLLECTE;
+            case REMONTEE: return COULEUR_REMONTEE;
+            case EN_SURFACE: return COULEUR_SURFACE;
             case SYNCHRONISATION:
-            case TRANSFERT:
-                composant.setBackground(COULEUR_TRANSFERT);
-                composant.setBorderColor(COULEUR_BORDURE_TRANSFERT);
-                break;
+            case TRANSFERT: return COULEUR_TRANSFERT;
+            default: return COULEUR_COLLECTE;
         }
     }
 
-    public NiEllipse getComponent() {
-        return composant;
-    }
-
-    public NiLabel getLabel() {
-        return label;
+    private Color getCouleurBordure(Balise.EtatBalise etat) {
+        switch (etat) {
+            case COLLECTE: return Color.WHITE;
+            case REMONTEE: return new Color(255, 165, 0);
+            case EN_SURFACE: return new Color(0, 200, 0);
+            case SYNCHRONISATION:
+            case TRANSFERT: return COULEUR_BORDURE_TRANSFERT;
+            default: return Color.WHITE;
+        }
     }
 
     public Balise getBalise() {
@@ -91,9 +115,6 @@ public class VueBalise {
     }
 
     public Point getPosition() {
-        return new Point(
-                composant.getX() + TAILLE/2,
-                composant.getY() + TAILLE/2
-        );
+        return new Point(x, y);
     }
 }
